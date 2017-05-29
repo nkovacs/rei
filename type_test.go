@@ -49,6 +49,7 @@ func TestParseType(t *testing.T) {
 		{"pkg.Concrete", true, Type{Pkg: "pkg", PkgName: "pkg", Name: "Concrete"}},
 		{"github.com/user/pkg/subpkg.Concrete", true, Type{Pkg: "github.com/user/pkg/subpkg", PkgName: "subpkg", Name: "Concrete"}},
 		{`("github.com/user/pkg/go-subpkg")subpkg.Concrete`, true, Type{Pkg: "github.com/user/pkg/go-subpkg", PkgName: "subpkg", Name: "Concrete", Aliased: true}},
+		{`("os")goos.File`, true, Type{Pkg: "os", PkgName: "goos", Name: "File", Aliased: true}},
 
 		{`(github.com/user/pkg/go-subpkg)subpkg.Concrete`, false, Type{Pkg: "github.com/user/pkg/go-subpkg", PkgName: "subpkg", Name: "Concrete", Aliased: true}},
 		{`"github.com/user/pkg/go-subpkg"subpkg.Concrete`, false, Type{Pkg: "github.com/user/pkg/go-subpkg", PkgName: "subpkg", Name: "Concrete", Aliased: true}},

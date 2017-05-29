@@ -102,6 +102,29 @@ func TestParseMapping(t *testing.T) {
 				},
 			},
 		},
+		{
+			"Type=os.File",
+			true,
+			map[string]*Type{
+				"Type": {
+					Pkg:     "os",
+					PkgName: "os",
+					Name:    "File",
+				},
+			},
+		},
+		{
+			"Type=(\"os\")goos.File",
+			true,
+			map[string]*Type{
+				"Type": {
+					Pkg:     "os",
+					PkgName: "goos",
+					Name:    "File",
+					Aliased: true,
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		tc := tc
