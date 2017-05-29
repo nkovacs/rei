@@ -11,6 +11,7 @@ type Type struct {
 	Pkg     string
 	PkgName string
 	Name    string
+	Aliased bool
 }
 
 func isIdentifier(s string) (bool, int) {
@@ -58,6 +59,7 @@ func ParseType(s string) (Type, error) {
 	typeName := s[dotIdx+1:]
 	pkgImport := packagePart
 	pkgName := packagePart
+	aliased := false
 
 	if strings.HasPrefix(packagePart, `("`) {
 		closeIdx := strings.LastIndex(packagePart, `")`)
@@ -70,6 +72,7 @@ func ParseType(s string) (Type, error) {
 		}
 		pkgImport = packagePart[2:closeIdx]
 		pkgName = packagePart[closeIdx+2:]
+		aliased = true
 	} else if slashIdx := strings.LastIndex(packagePart, "/"); slashIdx != -1 {
 		pkgName = packagePart[slashIdx+1:]
 	}
@@ -78,5 +81,6 @@ func ParseType(s string) (Type, error) {
 		Pkg:     pkgImport,
 		PkgName: pkgName,
 		Name:    typeName,
+		Aliased: aliased,
 	})
 }

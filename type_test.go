@@ -48,11 +48,11 @@ func TestParseType(t *testing.T) {
 		{"1Concrete", false, Type{Pkg: "", PkgName: "", Name: ""}},
 		{"pkg.Concrete", true, Type{Pkg: "pkg", PkgName: "pkg", Name: "Concrete"}},
 		{"github.com/user/pkg/subpkg.Concrete", true, Type{Pkg: "github.com/user/pkg/subpkg", PkgName: "subpkg", Name: "Concrete"}},
-		{`("github.com/user/pkg/go-subpkg")subpkg.Concrete`, true, Type{Pkg: "github.com/user/pkg/go-subpkg", PkgName: "subpkg", Name: "Concrete"}},
+		{`("github.com/user/pkg/go-subpkg")subpkg.Concrete`, true, Type{Pkg: "github.com/user/pkg/go-subpkg", PkgName: "subpkg", Name: "Concrete", Aliased: true}},
 
-		{`(github.com/user/pkg/go-subpkg)subpkg.Concrete`, false, Type{Pkg: "github.com/user/pkg/go-subpkg", PkgName: "subpkg", Name: "Concrete"}},
-		{`"github.com/user/pkg/go-subpkg"subpkg.Concrete`, false, Type{Pkg: "github.com/user/pkg/go-subpkg", PkgName: "subpkg", Name: "Concrete"}},
-		{`("github.com/user/pkg/go-subpkg)subpkg.Concrete`, false, Type{Pkg: "github.com/user/pkg/go-subpkg", PkgName: "subpkg", Name: "Concrete"}},
+		{`(github.com/user/pkg/go-subpkg)subpkg.Concrete`, false, Type{Pkg: "github.com/user/pkg/go-subpkg", PkgName: "subpkg", Name: "Concrete", Aliased: true}},
+		{`"github.com/user/pkg/go-subpkg"subpkg.Concrete`, false, Type{Pkg: "github.com/user/pkg/go-subpkg", PkgName: "subpkg", Name: "Concrete", Aliased: true}},
+		{`("github.com/user/pkg/go-subpkg)subpkg.Concrete`, false, Type{Pkg: "github.com/user/pkg/go-subpkg", PkgName: "subpkg", Name: "Concrete", Aliased: true}},
 	}
 	for _, tc := range testCases {
 		tc := tc

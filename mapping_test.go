@@ -87,6 +87,7 @@ func TestParseMapping(t *testing.T) {
 					Pkg:     "github.com/user/go-pkg",
 					PkgName: "pkg",
 					Name:    "Concrete",
+					Aliased: true,
 				},
 			},
 		},

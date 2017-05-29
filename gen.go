@@ -352,10 +352,14 @@ func gen(in io.Reader, inFilename string, targetPackageName string, typeMapping 
 			}
 		}
 		if !found {
-			outImports = append(outImports, &ast.ImportSpec{
-				Name: &ast.Ident{
+			var nameIdent *ast.Ident
+			if gType.Aliased {
+				nameIdent = &ast.Ident{
 					Name: gType.PkgName,
-				},
+				}
+			}
+			outImports = append(outImports, &ast.ImportSpec{
+				Name: nameIdent,
 				Path: &ast.BasicLit{
 					Kind:  token.STRING,
 					Value: strconv.Quote(gType.Pkg),
