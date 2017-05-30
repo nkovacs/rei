@@ -9,6 +9,8 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"golang.org/x/tools/imports"
 
@@ -32,6 +34,22 @@ type genericContext struct {
 	renames     map[token.Pos]ast.Expr //*ast.SelectorExpr or *ast.Ident
 
 	visited map[token.Pos]bool
+}
+
+func lowerFirst(s string) string {
+	if s == "" {
+		return ""
+	}
+	r, n := utf8.DecodeRuneInString(s)
+	return string(unicode.ToLower(r)) + s[n:]
+}
+
+func upperFirst(s string) string {
+	if s == "" {
+		return ""
+	}
+	r, n := utf8.DecodeRuneInString(s)
+	return string(unicode.ToUpper(r)) + s[n:]
 }
 
 func (gctx *genericContext) registerGenericType(node ast.Decl) bool {
@@ -68,7 +86,10 @@ func (gctx *genericContext) registerGenericType(node ast.Decl) bool {
 				Name: gType.Name,
 			}
 		}
-		gctx.renamePairs = append(gctx.renamePairs, ts.Name.String(), gType.Name)
+		gctx.renamePairs = append(gctx.renamePairs,
+			lowerFirst(ts.Name.String()), lowerFirst(gType.Name),
+			upperFirst(ts.Name.String()), upperFirst(gType.Name),
+		)
 		return true
 	}
 	return false
@@ -199,6 +220,20 @@ func (gctx *genericContext) collectDependants(file *ast.File) {
 				isConst = true
 			}
 			for _, s := range d.Specs {
+				switch s := s.(type) {
+				case *ast.ImportSpec:
+					if s.Doc == nil {
+						s.Doc = d.Doc
+					}
+				case *ast.TypeSpec:
+					if s.Doc == nil {
+						s.Doc = d.Doc
+					}
+				case *ast.ValueSpec:
+					if s.Doc == nil {
+						s.Doc = d.Doc
+					}
+				}
 				nodes = append(nodes, nodeData{
 					n:       s,
 					isConst: isConst,
@@ -299,6 +334,16 @@ func (gctx *genericContext) doRenames(n ast.Node) {
 	}
 }
 
+func (gctx *genericContext) renameComments(cg *ast.CommentGroup) *ast.CommentGroup {
+	if cg == nil {
+		return cg
+	}
+	for _, c := range cg.List {
+		c.Text = gctx.renamer.Replace(c.Text)
+	}
+	return cg
+}
+
 func gen(in io.Reader, inFilename string, targetPackageName string, typeMapping map[string]*Type, out io.Writer, outFilename string) error {
 
 	gctx := &genericContext{
@@ -312,7 +357,7 @@ func gen(in io.Reader, inFilename string, targetPackageName string, typeMapping 
 		visited:      make(map[token.Pos]bool),
 		renames:      make(map[token.Pos]ast.Expr),
 	}
-	file, err := parser.ParseFile(gctx.fset, inFilename, in, 0)
+	file, err := parser.ParseFile(gctx.fset, inFilename, in, parser.ParseComments)
 	if err != nil {
 		return errors.Wrap(err, "parsing file failed")
 	}
@@ -404,8 +449,7 @@ func gen(in io.Reader, inFilename string, targetPackageName string, typeMapping 
 
 	if len(outImports) > 0 {
 		importDecl := &ast.GenDecl{
-			Tok:    token.IMPORT,
-			Lparen: 1, // HACK, but printer doesn't care, it only needs to be non-zero.
+			Tok: token.IMPORT,
 		}
 		for _, spec := range outImports {
 			importDecl.Specs = append(importDecl.Specs, spec)
@@ -413,38 +457,92 @@ func gen(in io.Reader, inFilename string, targetPackageName string, typeMapping 
 		outFile.Decls = append(outFile.Decls, importDecl)
 	}
 
-	typeDecls := &ast.GenDecl{
-		Tok:    token.TYPE,
-		Lparen: 1,
+	sortedTypes := sortSpecs(gctx.types)
+	for _, spec := range sortedTypes {
+		ts, ok := spec.(*ast.TypeSpec)
+		if !ok {
+			continue
+		}
+		newTs := &ast.TypeSpec{
+			Name: ts.Name,
+			Type: ts.Type,
+		}
+		decl := &ast.GenDecl{
+			Tok: token.TYPE,
+			Doc: gctx.renameComments(ts.Doc),
+			Specs: []ast.Spec{
+				newTs,
+			},
+		}
+		outFile.Decls = append(outFile.Decls, decl)
 	}
-	constDecls := &ast.GenDecl{
-		Tok:    token.CONST,
-		Lparen: 1,
+
+	sortedConsts := sortSpecs(gctx.consts)
+	for _, spec := range sortedConsts {
+		vs, ok := spec.(*ast.ValueSpec)
+		if !ok {
+			continue
+		}
+		newVs := &ast.ValueSpec{
+			Names:  vs.Names,
+			Type:   vs.Type,
+			Values: vs.Values,
+		}
+		decl := &ast.GenDecl{
+			Tok: token.CONST,
+			Doc: gctx.renameComments(vs.Doc),
+			Specs: []ast.Spec{
+				newVs,
+			},
+		}
+		outFile.Decls = append(outFile.Decls, decl)
 	}
-	varDecls := &ast.GenDecl{
-		Tok:    token.VAR,
-		Lparen: 1,
+
+	sortedVars := sortSpecs(gctx.vars)
+	for _, spec := range sortedVars {
+		vs, ok := spec.(*ast.ValueSpec)
+		if !ok {
+			continue
+		}
+		newVs := &ast.ValueSpec{
+			Names:  vs.Names,
+			Type:   vs.Type,
+			Values: vs.Values,
+		}
+		decl := &ast.GenDecl{
+			Tok: token.VAR,
+			Doc: gctx.renameComments(vs.Doc),
+			Specs: []ast.Spec{
+				newVs,
+			},
+		}
+		outFile.Decls = append(outFile.Decls, decl)
 	}
-	typeDecls.Specs = sortSpecs(gctx.types)
-	constDecls.Specs = sortSpecs(gctx.consts)
-	varDecls.Specs = sortSpecs(gctx.vars)
-	if len(typeDecls.Specs) > 0 {
-		outFile.Decls = append(outFile.Decls, typeDecls)
-	}
-	if len(constDecls.Specs) > 0 {
-		outFile.Decls = append(outFile.Decls, constDecls)
-	}
-	if len(varDecls.Specs) > 0 {
-		outFile.Decls = append(outFile.Decls, varDecls)
-	}
+
 	funcDecls := sortDecls(gctx.funcs)
-	outFile.Decls = append(outFile.Decls, funcDecls...)
+	for _, decl := range funcDecls {
+		fdecl, ok := decl.(*ast.FuncDecl)
+		if !ok {
+			continue
+		}
+		newFdecl := &ast.FuncDecl{
+			Doc:  gctx.renameComments(fdecl.Doc),
+			Recv: fdecl.Recv,
+			Name: fdecl.Name,
+			Type: fdecl.Type,
+			Body: fdecl.Body,
+		}
+		outFile.Decls = append(outFile.Decls, newFdecl)
+	}
+
+	// newTokenPositioner().fixPositions(outFile)
+	clearPositions(outFile)
+
+	// ast.Print(outFset, outFile)
 
 	// TODO:
 	// If generating into different package than source, figure out dependencies,
 	// copy private stuff, reference public stuff.
-	// Copy doc comments, replacing the type names.
-	// Tests.
 
 	buff := &bytes.Buffer{}
 
