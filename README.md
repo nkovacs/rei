@@ -24,7 +24,7 @@ and `concrete` can be one of the following:
 
 ### Example
 
-```
+```go
 package daos
 
 type Type struct {
@@ -52,7 +52,7 @@ func (dao *TypeDAO) Get(id int64) (*Type, error) {
 
 Running `rei -in=type.go "Type=models.User"` will generate:
 
-```
+```go
 package daos
 
 import "models"
