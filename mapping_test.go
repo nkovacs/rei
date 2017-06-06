@@ -125,6 +125,42 @@ func TestParseMapping(t *testing.T) {
 				},
 			},
 		},
+		{
+			"Type=*Concrete",
+			true,
+			map[string]*Type{
+				"Type": {
+					Pkg:     "",
+					PkgName: "",
+					Name:    "Concrete",
+					Pointer: true,
+				},
+			},
+		},
+		{
+			"Type=*github.com/user/pkg.Concrete",
+			true,
+			map[string]*Type{
+				"Type": {
+					Pkg:     "github.com/user/pkg",
+					PkgName: "pkg",
+					Name:    "Concrete",
+					Pointer: true,
+				},
+			},
+		},
+		{
+			"Type=*os.File",
+			true,
+			map[string]*Type{
+				"Type": {
+					Pkg:     "os",
+					PkgName: "os",
+					Name:    "File",
+					Pointer: true,
+				},
+			},
+		},
 	}
 	for _, tc := range testCases {
 		tc := tc

@@ -21,6 +21,7 @@ and `concrete` can be one of the following:
 - **ConcreteType**: a type in the same package as the generated file, or a builtin type, e.g. `string` (no import will be generated)
 - **pkg.ConcreteType**: a type in a different package, will generate `import "pkg"`
 - **(pkgPath)pkgAlias.ConcreteType**: a type in a different package, will generate `import pkgAlias "pkgPath"`
+- **\*Type**: pointer to another type
 
 ### Example
 
@@ -101,7 +102,6 @@ Methods are not renamed, since the receiver type's name makes them unique.
 ## Known limitations
 
 - Only accepts a single file as input.
-- The concrete type cannot be a pointer type.
 - Dot imports are copied over to the generated file, but they cannot be removed by goimports.
   If the imported package is not used, this will cause a compilation error.
 - Declarations that are not generic are not copied to the generated file, since this can cause duplicate declarations.
@@ -109,4 +109,7 @@ Methods are not renamed, since the receiver type's name makes them unique.
 - When generating into a different directory, the generated package name is the directory name.
 - If the generic declaration's name does not contain the original type's name, the renaming will fail, leading to duplicate declarations.
   This will be fixed using name mangling.
+- Only the type's name is used in renaming, not the package name.
+  This will lead to duplicate declarations if two concrete types with the same name but
+  from two different packages are used.
 - Rei does not validate that the concrete type satisfies the generic type. If it does not, you will get a compilation error.

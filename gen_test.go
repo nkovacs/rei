@@ -196,6 +196,84 @@ func barConcrete(a Concrete) Concrete {
 				},
 			},
 		},
+		{
+			src: `package main
+
+import (
+	"io/ioutil"
+	"io"
+)
+
+type Reader interface {
+	io.Reader
+}
+
+func ReadAllStringFromReader(r Reader) (string, error) {
+	b, err := ioutil.ReadAll(r)
+	return string(b), err
+}
+`,
+			expected: `package main
+
+import (
+	"io/ioutil"
+	"os"
+)
+
+func ReadAllStringFromFile(r *os.File) (string, error) {
+	b, err := ioutil.ReadAll(r)
+	return string(b), err
+}
+`,
+			typeMapping: map[string]*Type{
+				"Reader": {
+					Name:    "File",
+					Pkg:     "os",
+					PkgName: "os",
+					Pointer: true,
+				},
+			},
+		},
+		{
+			src: `package main
+
+import (
+	"io/ioutil"
+	"io"
+)
+
+type Reader interface {
+	io.Reader
+}
+
+func ReadAllStringFromReader(r Reader) (string, error) {
+	b, err := ioutil.ReadAll(r)
+	return string(b), err
+}
+`,
+			expected: `package main
+
+import (
+	"io/ioutil"
+
+	test "github.com/nkovacs/rei/examples/pointer/go-test"
+)
+
+func ReadAllStringFromTestReader(r *test.TestReader) (string, error) {
+	b, err := ioutil.ReadAll(r)
+	return string(b), err
+}
+`,
+			typeMapping: map[string]*Type{
+				"Reader": {
+					Name:    "TestReader",
+					Pkg:     "github.com/nkovacs/rei/examples/pointer/go-test",
+					PkgName: "test",
+					Aliased: true,
+					Pointer: true,
+				},
+			},
+		},
 	}
 
 	for i, tc := range testCases {

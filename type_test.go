@@ -54,6 +54,12 @@ func TestParseType(t *testing.T) {
 		{`(github.com/user/pkg/go-subpkg)subpkg.Concrete`, false, Type{Pkg: "github.com/user/pkg/go-subpkg", PkgName: "subpkg", Name: "Concrete", Aliased: true}},
 		{`"github.com/user/pkg/go-subpkg"subpkg.Concrete`, false, Type{Pkg: "github.com/user/pkg/go-subpkg", PkgName: "subpkg", Name: "Concrete", Aliased: true}},
 		{`("github.com/user/pkg/go-subpkg)subpkg.Concrete`, false, Type{Pkg: "github.com/user/pkg/go-subpkg", PkgName: "subpkg", Name: "Concrete", Aliased: true}},
+
+		{"*Concrete", true, Type{Pkg: "", PkgName: "", Name: "Concrete", Pointer: true}},
+		{"*pkg.Concrete", true, Type{Pkg: "pkg", PkgName: "pkg", Name: "Concrete", Pointer: true}},
+		{"*github.com/user/pkg/subpkg.Concrete", true, Type{Pkg: "github.com/user/pkg/subpkg", PkgName: "subpkg", Name: "Concrete", Pointer: true}},
+		{`*("github.com/user/pkg/go-subpkg")subpkg.Concrete`, true, Type{Pkg: "github.com/user/pkg/go-subpkg", PkgName: "subpkg", Name: "Concrete", Aliased: true, Pointer: true}},
+		{`*("os")goos.File`, true, Type{Pkg: "os", PkgName: "goos", Name: "File", Aliased: true, Pointer: true}},
 	}
 	for _, tc := range testCases {
 		tc := tc

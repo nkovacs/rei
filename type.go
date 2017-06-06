@@ -12,6 +12,7 @@ type Type struct {
 	PkgName string
 	Name    string
 	Aliased bool
+	Pointer bool
 }
 
 func isIdentifier(s string) (bool, int) {
@@ -46,13 +47,23 @@ func validateType(t Type) (Type, error) {
 // ConcreteType
 // pkg/pkg/pkg.ConcreteType
 // ("pkg/pkg/go-pkg")pkg.ConcreteType
+// *ConcreteType
+// *pkg/pkg/pkg.ConcreteType
+// *("pkg/pkg/go-pkg")pkg.ConcreteType
 func ParseType(s string) (Type, error) {
+	Pointer := false
+	if strings.HasPrefix(s, "*") {
+		s = s[1:]
+		Pointer = true
+	}
+
 	dotIdx := strings.LastIndex(s, ".")
 	if dotIdx == -1 {
 		return validateType(Type{
 			Pkg:     "",
 			PkgName: "",
 			Name:    s,
+			Pointer: Pointer,
 		})
 	}
 	packagePart := s[:dotIdx]
@@ -68,6 +79,7 @@ func ParseType(s string) (Type, error) {
 				Pkg:     packagePart,
 				PkgName: packagePart,
 				Name:    typeName,
+				Pointer: Pointer,
 			}, fmt.Errorf(`invalid type specification %v: missing closing ")`, s)
 		}
 		pkgImport = packagePart[2:closeIdx]
@@ -82,5 +94,6 @@ func ParseType(s string) (Type, error) {
 		PkgName: pkgName,
 		Name:    typeName,
 		Aliased: aliased,
+		Pointer: Pointer,
 	})
 }

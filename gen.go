@@ -31,7 +31,7 @@ type genericContext struct {
 
 	renamer     *strings.Replacer
 	renamePairs []string
-	renames     map[token.Pos]ast.Expr //*ast.SelectorExpr or *ast.Ident
+	renames     map[token.Pos]ast.Expr //*ast.SelectorExpr or *ast.Ident or *ast.StarExpr
 
 	visited map[token.Pos]bool
 }
@@ -84,6 +84,11 @@ func (gctx *genericContext) registerGenericType(node ast.Decl) bool {
 		} else {
 			gctx.renames[ts.Pos()] = &ast.Ident{
 				Name: gType.Name,
+			}
+		}
+		if gType.Pointer {
+			gctx.renames[ts.Pos()] = &ast.StarExpr{
+				X: gctx.renames[ts.Pos()],
 			}
 		}
 		gctx.renamePairs = append(gctx.renamePairs,
