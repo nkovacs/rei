@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -108,7 +109,14 @@ func main() {
 		outFilename = "stdout"
 	}
 
-	err = gen(file, *in, targetPackageName, typeMapping, outWriter, outFilename)
+	buffer := &bytes.Buffer{}
+
+	err = gen(file, *in, targetPackageName, typeMapping, buffer, outFilename)
+	if err != nil {
+		fatal(exitcodeGenFailed, err)
+	}
+
+	_, err = io.Copy(outWriter, buffer)
 	if err != nil {
 		fatal(exitcodeGenFailed, err)
 	}
