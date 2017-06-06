@@ -6,10 +6,14 @@ const ZeroNumber Number = 0
 
 var SomeNumber Number = 42
 
-func AddNumber(a, b Number) Number {
+func numberAdder(a, b Number) Number {
 	return a + b
 }
 
+func AddNumber(a, b Number) Number {
+	return numberAdder(a, b)
+}
+
 func SubNumber(a, b Number) Number {
-	return a - b
+	return numberAdder(a, -b)
 }

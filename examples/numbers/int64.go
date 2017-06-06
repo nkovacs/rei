@@ -4,9 +4,12 @@ const ZeroInt64 int64 = 0
 
 var SomeInt64 int64 = 42
 
-func AddInt64(a, b int64) int64 {
+func int64Adder(a, b int64) int64 {
 	return a + b
 }
+func AddInt64(a, b int64) int64 {
+	return int64Adder(a, b)
+}
 func SubInt64(a, b int64) int64 {
-	return a - b
+	return int64Adder(a, -b)
 }
