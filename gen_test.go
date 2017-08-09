@@ -274,6 +274,40 @@ func ReadAllStringFromTestReader(r *test.TestReader) (string, error) {
 				},
 			},
 		},
+
+		{
+			src: `package main
+
+import (
+	"fmt"
+)
+
+type Type struct {
+	ID int64
+}
+
+func (t Type) Frobnicate() Type {
+	return t
+}
+
+func TypeFrobnicator(t *Type) {
+	fmt.Println(t.Frobnicate())
+}
+`,
+			expected: `package main
+
+import "fmt"
+
+func ConcreteFrobnicator(t *Concrete) {
+	fmt.Println(t.Frobnicate())
+}
+`,
+			typeMapping: map[string]*Type{
+				"Type": {
+					Name: "Concrete",
+				},
+			},
+		},
 	}
 
 	for i, tc := range testCases {
