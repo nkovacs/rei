@@ -110,6 +110,29 @@ func (gctx *genericContext) registerGenericTypes(file *ast.File) {
 
 func (gctx *genericContext) isDependant(node ast.Node) bool {
 	found := false
+
+	// Methods on the generic types are like interfaces,
+	// they should not be reified.
+	if funcDecl, ok := node.(*ast.FuncDecl); ok {
+		if funcDecl.Recv != nil {
+			for _, field := range funcDecl.Recv.List {
+				// Ident or StarExpr
+				var i *ast.Ident
+				switch x := field.Type.(type) {
+				case *ast.StarExpr:
+					i = x.X.(*ast.Ident)
+				case *ast.Ident:
+					i = x
+				}
+				if spec, ok := i.Obj.Decl.(*ast.TypeSpec); ok {
+					if gctx.isGeneric[spec.Pos()] {
+						return false
+					}
+				}
+			}
+		}
+	}
+
 	ast.Inspect(node, func(n ast.Node) bool {
 		if n, ok := n.(*ast.Ident); ok && n.Obj != nil {
 			// check types
